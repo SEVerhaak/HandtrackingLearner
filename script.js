@@ -44,7 +44,7 @@ async function takeSnapshot() {
     for (let hand of results.landmarks) {
         let handPoints = [];
         for (let handSingle of hand) {
-            handPoints.push({ x: handSingle.x, y: handSingle.y });
+            handPoints.push([handSingle.x, handSingle.y]);
         }
         detectArray.push(handPoints);
     }
