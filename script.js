@@ -40,22 +40,20 @@ async function startWebcam() {
 }
 
 async function importJSON() {
-    const files = ['./xyz_set.json', './test1.json', './test2.json'];
+    const files = ['../datasets/4set.json', '../datasets/xyz_set.json', '../datasets/wie.json'];
     for (const file of files){
         try {
             const response = await fetch(file); // Fetch the file
             if (!response.ok) throw new Error("Failed to load JSON");
 
             const fileData = await response.json();
+            console.log(fileData); // Use the object
 
-            dataset = await response.json(); // Convert response to JS object
-            console.log(dataset); // Use the object
-
-            for (const [key, value] of Object.entries(dataset)) {
+            for (const [key, value] of Object.entries(fileData)) {
                 console.log(`learned letter: ${key}`);
                 machine.learn(value, key)
             }
-            return dataset; // Return it if needed elsewhere
+            // return fileData; // Return it if needed elsewhere
 
         } catch (error) {
             console.error("Error loading JSON:", error);
@@ -210,7 +208,7 @@ function exportHandData() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataset, null, 1));
     const downloadAnchor = document.createElement("a");
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", "hand_data.json");
+    downloadAnchor.setAttribute("download", "wie.json");
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     document.body.removeChild(downloadAnchor);
