@@ -1,25 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hand Tracking App</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hand Tracking App</title>
 </head>
 <body>
-<input type="text" id="letterInput" placeholder="Enter a letter">
-<button id="startButton">Start Webcam</button>
-<button id="snapshotButton">Take Snapshot</button>
-<button id="exportButton">Export Data</button>
-<button id="checkButton">Check Gesture</button>
-
-<video id="videoElement" width="640" height="480" autoplay></video>
+<div class="flex-wrapper">
+    <input type="text" id="letterInput" placeholder="Enter a letter">
+    <button id="startButton">Start Webcam</button>
+    <button id="snapshotButton">Take Snapshot</button>
+    <button id="exportButton">Export Data</button>
+    <button id="checkButton">Check Gesture</button>
+    <button id="importJSONButton">Import JSON</button>
+</div>
+<div id="video-text-wrapper">
+    <video id="videoElement" width="640" height="480" autoplay></video>
+    <div id="letter-container"><p id="result-text">A</p></div>
+</div>
 
 <script type="module" src="script.js"></script>
 </body>
 <style>
-  video {
-    transform: scaleX(-1);
-    -webkit-transform: scaleX(-1); /* For Safari */
-  }
+    video {
+        transform: scaleX(-1);
+        -webkit-transform: scaleX(-1); /* For Safari */
+    }
+
+    .flex-wrapper {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+    }
+
+    #video-text-wrapper {
+        display: flex;
+        justify-content: center;
+        margin: 1rem;
+        gap: 1rem;
+    }
+
+    #letter-container {
+        display: flex;
+        align-items: center;
+        border: 1px solid black;
+        font-size: 5rem;
+        margin: 4rem;
+    }
+
+    #result-text {
+        margin: 4rem;
+    }
 </style>
 </html>

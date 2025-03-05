@@ -6,6 +6,9 @@ const startButton = document.getElementById("startButton");
 const snapshotButton = document.getElementById("snapshotButton");
 const exportButton = document.getElementById("exportButton");
 const checkButton = document.getElementById("checkButton");
+const jsonButton = document.getElementById("importJSONButton");
+const dataset = {}; // Object to store data by letter
+
 
 const handData = {}; // Object to store hand tracking data
 const video = document.getElementById("videoElement");
@@ -36,6 +39,25 @@ async function startWebcam() {
     });
 }
 
+async function importJSON() {
+    try {
+        const response = await fetch('./test.json'); // Fetch the file
+        if (!response.ok) throw new Error("Failed to load JSON");
+
+        const dataset = await response.json(); // Convert response to JS object
+        console.log(dataset); // Use the object
+
+        return dataset; // Return it if needed elsewhere
+    } catch (error) {
+        console.error("Error loading JSON:", error);
+    }
+}
+
+function addToDataset(letter, flattenedData) {
+    dataset[letter] = flattenedData;
+    console.log(dataset);
+}
+
 async function recordHandTracking() {
     if (!handLandmarker) {
         console.error("Hand tracking model is not initialized.");
@@ -56,8 +78,6 @@ async function recordHandTracking() {
     // time is measured in frameInterval * numFrames (In ms)
     const frameInterval = 50;
     const numFrames = 20;
-
-    let frameCount = 0;
     let collectedData = [];
 
     console.log("Recording started...");
@@ -87,7 +107,8 @@ async function recordHandTracking() {
             for (let handSingle of hand) {
                 let relX = handSingle.x - wrist.x; // X relative to wrist
                 let relY = handSingle.y - wrist.y; // Y relative to wrist
-                handPoints.push([relX, relY]); // Store relative coordinates
+                let relZ = handSingle.z - wrist.z;
+                handPoints.push([relX, relY, relZ]); // Store relative coordinates
             }
 
             detectArray.push(handPoints);
@@ -95,8 +116,8 @@ async function recordHandTracking() {
 
 
         handData[letter].push(detectArray);
+        console.log(handData);
         collectedData.push(detectArray);
-        frameCount++;
 
         await new Promise(resolve => setTimeout(resolve, frameInterval)); // Wait for next frame capture
     }
@@ -107,6 +128,7 @@ async function recordHandTracking() {
     // Convert collected data into a flattened array for KNear
     const flattenedData = collectedData.flat(Infinity); // Flatten to a single array of numbers
     console.log(flattenedData);
+    addToDataset(letter, flattenedData);
 
     if (flattenedData.length > 0) {
         machine.learn(flattenedData, letter);
@@ -144,9 +166,10 @@ async function detectGesture() {
         for (let hand of results.landmarks) {
             const wrist = hand[0]; // Wrist landmark (usually index 0)
             for (let handSingle of hand) {
-                let relX = handSingle.x - wrist.x;
-                let relY = handSingle.y - wrist.y;
-                detectArray.push(relX, relY);
+                let relX = handSingle.x - wrist.x; // X relative to wrist
+                let relY = handSingle.y - wrist.y; // Y relative to wrist
+                let relZ = handSingle.z - wrist.z;
+                detectArray.push([relX, relY, relZ]); // Store relative coordinates
             }
         }
 
@@ -174,7 +197,7 @@ async function detectGesture() {
 
 
 function exportHandData() {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(handData, null, 2));
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataset, null, 1));
     const downloadAnchor = document.createElement("a");
     downloadAnchor.setAttribute("href", dataStr);
     downloadAnchor.setAttribute("download", "hand_data.json");
@@ -187,5 +210,6 @@ startButton.addEventListener("click", startWebcam);
 snapshotButton.addEventListener("click", recordHandTracking);
 exportButton.addEventListener("click", exportHandData);
 checkButton.addEventListener("click", detectGesture);
+jsonButton.addEventListener("click", importJSON);
 
 initializeHandTracking();
