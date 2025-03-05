@@ -7,7 +7,7 @@ const snapshotButton = document.getElementById("snapshotButton");
 const exportButton = document.getElementById("exportButton");
 const checkButton = document.getElementById("checkButton");
 const jsonButton = document.getElementById("importJSONButton");
-const dataset = {}; // Object to store data by letter
+let dataset = {}; // Object to store data by letter
 
 
 const handData = {}; // Object to store hand tracking data
@@ -40,21 +40,26 @@ async function startWebcam() {
 }
 
 async function importJSON() {
-    try {
-        const response = await fetch('./xyz_set.json'); // Fetch the file
-        if (!response.ok) throw new Error("Failed to load JSON");
+    const files = ['./xyz_set.json', './test1.json', './test2.json'];
+    for (const file of files){
+        try {
+            const response = await fetch(file); // Fetch the file
+            if (!response.ok) throw new Error("Failed to load JSON");
 
-        const dataset = await response.json(); // Convert response to JS object
-        console.log(dataset); // Use the object
+            const fileData = await response.json();
 
-        for (const [key, value] of Object.entries(dataset)) {
-            console.log(`learned letter: ${key}`);
-            machine.learn(value, key)
+            dataset = await response.json(); // Convert response to JS object
+            console.log(dataset); // Use the object
+
+            for (const [key, value] of Object.entries(dataset)) {
+                console.log(`learned letter: ${key}`);
+                machine.learn(value, key)
+            }
+            return dataset; // Return it if needed elsewhere
+
+        } catch (error) {
+            console.error("Error loading JSON:", error);
         }
-
-        return dataset; // Return it if needed elsewhere
-    } catch (error) {
-        console.error("Error loading JSON:", error);
     }
 }
 
@@ -81,8 +86,8 @@ async function recordHandTracking() {
 
     recording = true;
     // time is measured in frameInterval * numFrames (In ms)
-    const frameInterval = 50;
-    const numFrames = 20;
+    const frameInterval = 20;
+    const numFrames = 50;
     let collectedData = [];
 
     console.log("Recording started...");
@@ -149,8 +154,8 @@ async function detectGesture() {
     }
 
     // time is measured in frameInterval * numFrames (In ms)
-    const frameInterval = 50;
-    const numFrames = 20;
+    const frameInterval = 20;
+    const numFrames = 50;
 
     let collectedData = [];
 
