@@ -41,11 +41,16 @@ async function startWebcam() {
 
 async function importJSON() {
     try {
-        const response = await fetch('./test.json'); // Fetch the file
+        const response = await fetch('./xyz_set.json'); // Fetch the file
         if (!response.ok) throw new Error("Failed to load JSON");
 
         const dataset = await response.json(); // Convert response to JS object
         console.log(dataset); // Use the object
+
+        for (const [key, value] of Object.entries(dataset)) {
+            console.log(`learned letter: ${key}`);
+            machine.learn(value, key)
+        }
 
         return dataset; // Return it if needed elsewhere
     } catch (error) {
@@ -183,11 +188,11 @@ async function detectGesture() {
     // Fully flatten the collected data
     const flattenedData = collectedData.flat(Infinity);
 
-    console.log("Input to classify:", flattenedData);
-
     if (flattenedData.length > 0) {
         const detectedLetter = machine.classify(flattenedData);
+        const text = document.getElementById('result-text')
         console.log(`Detected gesture: ${detectedLetter}`);
+        text.innerHTML = detectedLetter;
         return detectedLetter;
     } else {
         console.error("No data collected for gesture detection.");
