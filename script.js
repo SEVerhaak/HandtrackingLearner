@@ -54,8 +54,8 @@ async function recordHandTracking() {
 
     recording = true;
     // time is measured in frameInterval * numFrames (In ms)
-    const frameInterval = 200;
-    const numFrames = 5;
+    const frameInterval = 50;
+    const numFrames = 20;
 
     let frameCount = 0;
     let collectedData = [];
@@ -68,6 +68,7 @@ async function recordHandTracking() {
         const results = await handLandmarker.detectForVideo(video, performance.now());
 
         let detectArray = [];
+        /*
         for (let hand of results.landmarks) {
             let handPoints = [];
             for (let handSingle of hand) {
@@ -75,6 +76,23 @@ async function recordHandTracking() {
             }
             detectArray.push(handPoints);
         }
+
+
+         */
+
+        for (let hand of results.landmarks) {
+            let handPoints = [];
+            const wrist = hand[0]; // Wrist is the first landmark (index 0)
+
+            for (let handSingle of hand) {
+                let relX = handSingle.x - wrist.x; // X relative to wrist
+                let relY = handSingle.y - wrist.y; // Y relative to wrist
+                handPoints.push([relX, relY]); // Store relative coordinates
+            }
+
+            detectArray.push(handPoints);
+        }
+
 
         handData[letter].push(detectArray);
         collectedData.push(detectArray);
@@ -104,8 +122,8 @@ async function detectGesture() {
     }
 
     // time is measured in frameInterval * numFrames (In ms)
-    const frameInterval = 200;
-    const numFrames = 5;
+    const frameInterval = 50;
+    const numFrames = 20;
 
     let collectedData = [];
 
@@ -115,9 +133,20 @@ async function detectGesture() {
         const results = await handLandmarker.detectForVideo(video, performance.now());
 
         let detectArray = [];
+        /*
         for (let hand of results.landmarks) {
             for (let handSingle of hand) {
                 detectArray.push(handSingle.x, handSingle.y); // Store x, y directly
+            }
+        }
+        old for loop
+         */
+        for (let hand of results.landmarks) {
+            const wrist = hand[0]; // Wrist landmark (usually index 0)
+            for (let handSingle of hand) {
+                let relX = handSingle.x - wrist.x;
+                let relY = handSingle.y - wrist.y;
+                detectArray.push(relX, relY);
             }
         }
 
