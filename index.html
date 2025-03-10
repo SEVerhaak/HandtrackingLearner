@@ -9,16 +9,17 @@
 <div class="flex-wrapper">
     <input type="text" id="letterInput" placeholder="Enter a letter">
     <button id="startButton">Start Webcam</button>
-    <button id="snapshotButton">Take Snapshot</button>
-    <button id="exportButton">Export Data</button>
-    <button id="checkButton">Check Gesture</button>
-    <button id="importJSONButton">Import JSON</button>
+    <button id="snapshotButton">Learn Gesture</button>
+    <button id="checkButton">Detect Gesture</button>
+    <button id="exportButton">Export Data as JSON</button>
+    <button id="importJSONButton">Import Data as JSON</button>
 </div>
 <div id="video-text-wrapper">
     <video id="videoElement" width="640" height="480" autoplay></video>
     <canvas id="output"></canvas>
-    <div id="letter-container"><p id="result-text"></p></div>
 </div>
+<div id="letter-container"><p id="result-text"></p></div>
+
 
 <script type="module" src="script.js"></script>
 </body>
