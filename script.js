@@ -236,11 +236,19 @@ async function detectGesture() {
     const flattenedData = collectedData.flat(Infinity);
 
     if (flattenedData.length > 0) {
-        const detectedLetter = machine.classify(flattenedData);
-        const text = document.getElementById('result-text')
-        console.log(`Detected gesture: ${detectedLetter}`);
-        text.innerHTML = detectedLetter;
-        return detectedLetter;
+        const nearestMatches = machine.findNearest(flattenedData, 3); // Gebruik de nieuwe functie
+
+        let resultText = nearestMatches.map(([letter, count]) => `${letter}: ${count}`).join("<br>");
+        document.getElementById('result-text').innerHTML = `${resultText} Accuracy: ${Math.round((nearestMatches[0][1] / 3) * 100)}%`;
+
+        console.log("Nearest Matches:", nearestMatches, `Accuracy: ${(nearestMatches[0][1] / 3) * 100}`);
+        return nearestMatches;
+
+        // const detectedLetter = machine.classify(flattenedData);
+        // const text = document.getElementById('result-text')
+        // console.log(`Detected gesture: ${detectedLetter}`);
+        // text.innerHTML = detectedLetter;
+        // return detectedLetter;
     } else {
         console.error("No data collected for gesture detection.");
         return null;

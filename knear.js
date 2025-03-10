@@ -125,4 +125,24 @@ export default class kNear {
         }
         return this.mode(votes)
     }
+
+    // **🆕 Zoek de K dichtstbijzijnde matches en geef de frequentie van labels terug**
+    findNearest(v, numNearest = 3) {
+        if (!this.checkInput(v)) return null;
+
+        let distances = this.training.map(obj => ({
+            d: this.dist(v, obj.v),
+            vote: obj.lab
+        }));
+
+        distances.sort((a, b) => a.d - b.d);
+        let nearestNeighbors = distances.slice(0, numNearest);
+
+        let frequencyMap = {};
+        for (let neighbor of nearestNeighbors) {
+            frequencyMap[neighbor.vote] = (frequencyMap[neighbor.vote] || 0) + 1;
+        }
+
+        return Object.entries(frequencyMap).sort((a, b) => b[1] - a[1]);
+    }
 }
