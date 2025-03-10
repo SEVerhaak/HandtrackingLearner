@@ -9,10 +9,13 @@ const checkButton = document.getElementById("checkButton");
 const jsonButton = document.getElementById("importJSONButton");
 const dataset = {}; // Object to store data by letter
 
-
 const handData = {}; // Object to store hand tracking data
+const canvas = document.getElementById("output");
+const ctx = canvas.getContext("2d");
 const video = document.getElementById("videoElement");
 
+
+let webcamRunning =  false;
 let handLandmarker;
 let recording = false;
 
@@ -36,6 +39,63 @@ async function startWebcam() {
     navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
         video.srcObject = stream;
         video.play();
+        webcamRunning = true;
+
+        video.onloadeddata = () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            visualiseHands();
+        };
+    });
+}
+
+async function visualiseHands() {
+    if (!webcamRunning) return;
+
+    // Fill the canvas with a black background
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const results = await handLandmarker.detectForVideo(video, performance.now());
+
+    if (results.landmarks.length > 0) {
+        for (const landmarks of results.landmarks) {
+            drawHandLandmarks(landmarks);
+        }
+    }
+
+    requestAnimationFrame(visualiseHands);
+}
+
+// Define the draw function BEFORE it's used
+function drawHandLandmarks(landmarks) {
+    ctx.fillStyle = "red";
+    ctx.strokeStyle = "green";
+    ctx.lineWidth = 2;
+
+    // Define hand connections
+    const connections = [
+        [0, 1], [1, 2], [2, 3], [3, 4], // Thumb
+        [0, 5], [5, 6], [6, 7], [7, 8], // Index
+        [0, 9], [9, 10], [10, 11], [11, 12], // Middle
+        [0, 13], [13, 14], [14, 15], [15, 16], // Ring
+        [0, 17], [17, 18], [18, 19], [19, 20], // Pinky
+        [5, 9], [9, 13], [13, 17] // Palm connections
+    ];
+
+    // Draw connections
+    connections.forEach(([start, end]) => {
+        ctx.beginPath();
+        ctx.moveTo(landmarks[start].x * canvas.width, landmarks[start].y * canvas.height);
+        ctx.lineTo(landmarks[end].x * canvas.width, landmarks[end].y * canvas.height);
+        ctx.stroke();
+    });
+
+    // Draw landmarks
+    landmarks.forEach(point => {
+        ctx.beginPath();
+        ctx.arc(point.x * canvas.width, point.y * canvas.height, 5, 0, Math.PI * 2);
+        ctx.fill();
     });
 }
 
@@ -64,6 +124,7 @@ function addToDataset(letter, flattenedData) {
 }
 
 async function recordHandTracking() {
+    // Neemt de handgebaren op voor training
     if (!handLandmarker) {
         console.error("Hand tracking model is not initialized.");
         return;
@@ -93,17 +154,6 @@ async function recordHandTracking() {
         const results = await handLandmarker.detectForVideo(video, performance.now());
 
         let detectArray = [];
-        /*
-        for (let hand of results.landmarks) {
-            let handPoints = [];
-            for (let handSingle of hand) {
-                handPoints.push([handSingle.x, handSingle.y]);
-            }
-            detectArray.push(handPoints);
-        }
-
-
-         */
 
         for (let hand of results.landmarks) {
             let handPoints = [];
@@ -115,7 +165,6 @@ async function recordHandTracking() {
                 let relZ = handSingle.z - wrist.z;
                 handPoints.push([relX, relY, relZ]); // Store relative coordinates
             }
-
             detectArray.push(handPoints);
         }
 
@@ -143,6 +192,8 @@ async function recordHandTracking() {
 }
 
 async function detectGesture() {
+    // Neemt de handgebaren op voor detectie
+
     if (!handLandmarker) {
         console.error("Hand tracking model is not initialized.");
         return;
@@ -160,14 +211,7 @@ async function detectGesture() {
         const results = await handLandmarker.detectForVideo(video, performance.now());
 
         let detectArray = [];
-        /*
-        for (let hand of results.landmarks) {
-            for (let handSingle of hand) {
-                detectArray.push(handSingle.x, handSingle.y); // Store x, y directly
-            }
-        }
-        old for loop
-         */
+
         for (let hand of results.landmarks) {
             const wrist = hand[0]; // Wrist landmark (usually index 0)
             for (let handSingle of hand) {
