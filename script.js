@@ -1,6 +1,7 @@
 import { HandLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 import KNear from "./knear.js";
 
+// alle DOM elementen
 const letterSelectorInput = document.getElementById("letterInput");
 const startButton = document.getElementById("startButton");
 const snapshotButton = document.getElementById("snapshotButton");
@@ -11,6 +12,7 @@ let dataset = {}; // Object to store data by letter
 
 const handData = {}; // Object to store hand tracking data
 const canvas = document.getElementById("output");
+
 const ctx = canvas.getContext("2d");
 const video = document.getElementById("videoElement");
 
@@ -23,6 +25,7 @@ let recording = false;
 const machine = new KNear(1);
 
 async function initializeHandTracking() {
+    // init
     const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm");
     handLandmarker = await HandLandmarker.createFromOptions(vision, {
         baseOptions: {
@@ -36,6 +39,7 @@ async function initializeHandTracking() {
 }
 
 async function startWebcam() {
+    // init
     navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
         video.srcObject = stream;
         video.play();
@@ -50,6 +54,7 @@ async function startWebcam() {
 }
 
 async function visualiseHands() {
+    // voor de visualisatie van de hand positie
     if (!webcamRunning) return;
 
     // Fill the canvas with a black background
@@ -67,11 +72,11 @@ async function visualiseHands() {
     requestAnimationFrame(visualiseHands);
 }
 
-// Define the draw function BEFORE it's used
 function drawHandLandmarks(landmarks) {
     ctx.fillStyle = "red";
     ctx.strokeStyle = "green";
     ctx.lineWidth = 2;
+
 
     // Define hand connections
     const connections = [
@@ -126,7 +131,9 @@ function addToDataset(letter, flattenedData) {
     console.log(dataset);
 }
 
+
 async function recordHandTracking() {
+
     // Neemt de handgebaren op voor training
     if (!handLandmarker) {
         console.error("Hand tracking model is not initialized.");
@@ -184,7 +191,6 @@ async function recordHandTracking() {
 
     // Convert collected data into a flattened array for KNear
     const flattenedData = collectedData.flat(Infinity); // Flatten to a single array of numbers
-    console.log(flattenedData);
     addToDataset(letter, flattenedData);
 
     if (flattenedData.length > 0) {
@@ -254,7 +260,6 @@ async function detectGesture() {
         return null;
     }
 }
-
 
 function exportHandData() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataset, null, 1));

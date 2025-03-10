@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test</title>
+</head>
+<body>
+<div class="flex-wrapper">
+  <!--
+  <input type="text" id="letterInput" placeholder="Enter a letter">
+  <button id="startButton">Start Webcam</button>
+  <button id="snapshotButton">Learn Gesture</button>
+  <button id="checkButton">Detect Gesture</button>
+  <button id="exportButton">Export Data as JSON</button>
+  <button id="importJSONButton">Import Data as JSON</button>
+  -->
+  <label for="characterInput">Enter a letter</label>
+  <input type="text" id="characterInput" placeholder="Enter a letter">
+  <button id="snapShot">Take Snapshot of current positions</button>
+  <button id="showSnapShot">Show Snapshot of last recorded positions</button>
+</div>
+<div id="video-text-wrapper">
+  <video id="videoElement" width="640" height="480" autoplay></video>
+  <canvas id="visualOutput"></canvas>
+</div>
+<canvas id="snapShotOutput"></canvas>
+<h1 id="currentLetterText"></h1>
+<div id="letter-container"><p id="result-text"></p></div>
+</body>
+</html>
+<style>
+  video, canvas {
+    transform: scaleX(-1);
+    -webkit-transform: scaleX(-1); /* For Safari */
+  }
+
+  h1{
+    text-align: center;
+  }
+
+  .flex-wrapper {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  #video-text-wrapper {
+    display: flex;
+    justify-content: center;
+    margin: 1rem;
+    gap: 1rem;
+  }
+
+  #letter-container {
+    display: flex;
+    align-items: center;
+    border: 1px solid black;
+    font-size: 5rem;
+    margin: 4rem;
+  }
+
+  #result-text {
+    margin: 4rem;
+  }
+</style>
+<script type="module" src="improvedScript.js"></script>
