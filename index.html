@@ -16,13 +16,14 @@
 </div>
 <div id="video-text-wrapper">
     <video id="videoElement" width="640" height="480" autoplay></video>
+    <canvas id="output"></canvas>
     <div id="letter-container"><p id="result-text"></p></div>
 </div>
 
 <script type="module" src="script.js"></script>
 </body>
 <style>
-    video {
+    video, canvas {
         transform: scaleX(-1);
         -webkit-transform: scaleX(-1); /* For Safari */
     }
