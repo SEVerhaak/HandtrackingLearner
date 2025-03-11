@@ -18,13 +18,19 @@
   <input type="text" id="characterInput" placeholder="Enter a letter">
   <button id="snapShot">Take Snapshot of current positions</button>
   <button id="showSnapShot">Show Snapshot of last recorded positions</button>
+  <button id="importJSON">Import Model Data</button>
+    <button id="startLoop">Start Loop</button>
+
+
 </div>
 <div id="video-text-wrapper">
   <video id="videoElement" width="640" height="480" autoplay></video>
   <canvas id="visualOutput"></canvas>
 </div>
-<canvas id="snapShotOutput"></canvas>
-<h1 id="currentLetterText"></h1>
+<div id="canvas-text-wrapper">
+    <h1 id="currentLetterText"></h1>
+    <canvas id="snapShotOutput"></canvas>
+</div>
 <div id="letter-container"><p id="result-text"></p></div>
 </body>
 </html>
@@ -44,11 +50,25 @@
     justify-content: center;
   }
 
-  #video-text-wrapper {
+  #video-text-wrapper{
     display: flex;
     justify-content: center;
     margin: 1rem;
     gap: 1rem;
+  }
+
+  #canvas-text-wrapper{
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      margin: 1rem;
+      gap: 1rem;
+  }
+
+  #canvas-text-wrapper canvas{
+      max-width: 20%;
+
   }
 
   #letter-container {
