@@ -105,7 +105,7 @@ function drawHandLandmarks(landmarks) {
 }
 
 async function importJSON() {
-    const files = ['../datasets/dataset1_rechts.json', '../datasets/dataset2_rechts.json', '../datasets/dataset3_rechts.json'];
+    const files = ['../datasets/dataset1_rechts.json', '../datasets/dataset2_rechts.json', '../datasets/dataset3_rechts.json', '../datasets/dataset4_rechts.json', '../datasets/dataset5_rechts.json'];
     for (const file of files){
         try {
             const response = await fetch(file); // Fetch the file
