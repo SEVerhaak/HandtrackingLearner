@@ -20,6 +20,7 @@ const video = document.getElementById("videoElement");
 let webcamRunning =  false;
 let handLandmarker;
 let recording = false;
+let detecting = false;
 
 // Initialize KNear with k = 3 (you can adjust based on needs)
 const machine = new KNear(1);
@@ -106,12 +107,7 @@ function drawHandLandmarks(landmarks) {
 
 async function importJSON() {
     const files = [
-        '../datasets/dataset1_rechts.json',
-        '../datasets/dataset2_rechts.json',
-        '../datasets/dataset3_rechts.json',
-        '../datasets/dataset4_rechts.json',
-        '../datasets/dataset5_rechts.json',
-        '../datasets/dataset6_rechts.json'
+        '../datasets/allmoveset_links.json',
     ];
     for (const file of files){
         try {
@@ -138,135 +134,150 @@ function addToDataset(letter, flattenedData) {
     console.log(dataset);
 }
 
-
 async function recordHandTracking() {
-
-    // Neemt de handgebaren op voor training
+    // Controleer of het model is geladen
     if (!handLandmarker) {
         console.error("Hand tracking model is not initialized.");
         return;
     }
 
+    // Haal de letter op uit de invoer
     const letter = letterSelectorInput.value;
     if (!letter) {
         console.error("Please enter a letter.");
         return;
     }
 
+    // Maak een opslag aan voor de letter als deze nog niet bestaat
     if (!handData[letter]) {
         handData[letter] = [];
     }
 
     recording = true;
-    // time is measured in frameInterval * numFrames (In ms)
-    const frameInterval = 20;
-    const numFrames = 50;
     let collectedData = [];
+    console.log(`Recording started for letter: ${letter}...`);
 
-    console.log("Recording started...");
+    const numFrames = 10; // 🔥 Aantal frames dat we per letter opnemen
+    let validFrames = 0; // Houdt bij hoeveel frames geldig zijn
 
     for (let i = 0; i < numFrames; i++) {
-        if (!recording) break;
-
         const results = await handLandmarker.detectForVideo(video, performance.now());
-
         let detectArray = [];
 
-        for (let hand of results.landmarks) {
-            let handPoints = [];
-            const wrist = hand[0]; // Wrist is the first landmark (index 0)
+        if (results.landmarks && results.landmarks.length > 0) { // Check of er een hand is gedetecteerd
+            for (let hand of results.landmarks) {
+                let handPoints = [];
+                const wrist = hand[0]; // De pols als referentiepunt
 
-            for (let handSingle of hand) {
-                let relX = handSingle.x - wrist.x; // X relative to wrist
-                let relY = handSingle.y - wrist.y; // Y relative to wrist
-                let relZ = handSingle.z - wrist.z;
-                handPoints.push([relX, relY, relZ]); // Store relative coordinates
+                for (let handSingle of hand) {
+                    let relX = handSingle.x - wrist.x;
+                    let relY = handSingle.y - wrist.y;
+                    let relZ = handSingle.z - wrist.z;
+                    handPoints.push(relX, relY, relZ); // Relatieve coördinaten opslaan als vlakke array
+                }
+                detectArray.push(handPoints);
             }
-            detectArray.push(handPoints);
+
+            handData[letter].push(detectArray);
+            collectedData.push(detectArray.flat()); // Gegevens opslaan voor het ML-model
+            validFrames++; // Alleen ophogen als het een geldig frame is
+        } else {
+            console.warn(`Frame ${i + 1}: No hand detected, skipping...`);
         }
 
-
-        handData[letter].push(detectArray);
-        console.log(handData);
-        collectedData.push(detectArray);
-
-        await new Promise(resolve => setTimeout(resolve, frameInterval)); // Wait for next frame capture
+        await new Promise(resolve => setTimeout(resolve, 50)); // Kleine vertraging tussen frames
     }
 
-    console.log("Recording stopped.");
+    console.log(`Recording stopped for letter: ${letter}`);
     recording = false;
 
-    // Convert collected data into a flattened array for KNear
-    const flattenedData = collectedData.flat(Infinity); // Flatten to a single array of numbers
-    addToDataset(letter, flattenedData);
+    // Controle: Voorkom NaN door alleen te middelen als er geldige frames zijn
+    if (validFrames > 0) {
+        let averagedData = new Array(collectedData[0].length).fill(0);
 
-    if (flattenedData.length > 0) {
-        machine.learn(flattenedData, letter);
-        console.log(`Learned: ${letter}`);
+        for (let frame of collectedData) {
+            frame.forEach((value, index) => {
+                averagedData[index] += value;
+            });
+        }
+
+        averagedData = averagedData.map(val => val / validFrames); // 🔥 Deel door het aantal geldige frames
+
+        addToDataset(letter, averagedData);
+        machine.learn(averagedData, letter);
+        console.log(`Learned letter: ${letter} with ${validFrames} valid frames.`);
+    } else {
+        console.error("No valid data collected. Please try again.");
     }
+}
 
+
+function startDetection(){
+    detecting = !detecting;
+    detectGesture()
 }
 
 async function detectGesture() {
-    // Neemt de handgebaren op voor detectie
-
-    if (!handLandmarker) {
-        console.error("Hand tracking model is not initialized.");
-        return;
-    }
-
-    // time is measured in frameInterval * numFrames (In ms)
-    const frameInterval = 20;
-    const numFrames = 50;
-
-    let collectedData = [];
-
-    console.log("Gesture detection started...");
-
-    for (let i = 0; i < numFrames; i++) {
-        const results = await handLandmarker.detectForVideo(video, performance.now());
-
-        let detectArray = [];
-
-        for (let hand of results.landmarks) {
-            const wrist = hand[0]; // Wrist landmark (usually index 0)
-            for (let handSingle of hand) {
-                let relX = handSingle.x - wrist.x; // X relative to wrist
-                let relY = handSingle.y - wrist.y; // Y relative to wrist
-                let relZ = handSingle.z - wrist.z;
-                detectArray.push([relX, relY, relZ]); // Store relative coordinates
+    return new Promise(resolve => {
+        async function loop() {
+            if (!handLandmarker) {
+                console.error("Hand tracking model is not initialized.");
+                return;
             }
+
+            if (!detecting) {
+                console.log('stopped detecting');
+                return;
+            }
+
+            let collectedData = [];
+            console.log("Gesture detection started...");
+
+            const numFrames = 5; // Aantal frames om te verzamelen
+
+            for (let i = 0; i < numFrames; i++) {
+                const results = await handLandmarker.detectForVideo(video, performance.now());
+                let detectArray = [];
+
+                for (let hand of results.landmarks) {
+                    const wrist = hand[0];
+                    for (let handSingle of hand) {
+                        let relX = handSingle.x - wrist.x;
+                        let relY = handSingle.y - wrist.y;
+                        let relZ = handSingle.z - wrist.z;
+                        detectArray.push([relX, relY, relZ]);
+                    }
+                }
+                collectedData.push(detectArray.flat());
+                await new Promise(resolve => setTimeout(resolve, 50)); // Vertraging tussen frames
+            }
+
+            // Bereken het gemiddelde van de verzamelde frames
+            let averagedData = new Array(collectedData[0].length).fill(0);
+            for (let frame of collectedData) {
+                frame.forEach((value, index) => {
+                    averagedData[index] += value;
+                });
+            }
+            averagedData = averagedData.map(val => val / numFrames); // Gemiddelde berekening
+
+            if (averagedData.length > 0) {
+                const nearestMatches = machine.findNearest(averagedData, 2);
+
+                let resultText = nearestMatches.map(({ label, distance }) => `${label}: ${distance.toFixed(4)}`).join("<br>");
+                document.getElementById('result-text').innerHTML = `${resultText}`;
+                console.log("Nearest Matches:", nearestMatches);
+            } else {
+                console.error("No data collected for gesture detection.");
+            }
+
+            setTimeout(loop, 50);
         }
 
-        collectedData.push(detectArray);
-        await new Promise(resolve => setTimeout(resolve, frameInterval)); // Wait for next frame capture
-    }
-
-    console.log("Gesture detection finished.");
-
-
-    // Fully flatten the collected data
-    const flattenedData = collectedData.flat(Infinity);
-
-    if (flattenedData.length > 0) {
-        const nearestMatches = machine.findNearest(flattenedData, 3); // Gebruik de nieuwe functie
-
-        let resultText = nearestMatches.map(([letter, count]) => `${letter}: ${count}`).join("<br>");
-        document.getElementById('result-text').innerHTML = `${resultText} Accuracy: ${Math.round((nearestMatches[0][1] / 3) * 100)}%`;
-
-        console.log("Nearest Matches:", nearestMatches, `Accuracy: ${(nearestMatches[0][1] / 3) * 100}`);
-        return nearestMatches;
-
-        // const detectedLetter = machine.classify(flattenedData);
-        // const text = document.getElementById('result-text')
-        // console.log(`Detected gesture: ${detectedLetter}`);
-        // text.innerHTML = detectedLetter;
-        // return detectedLetter;
-    } else {
-        console.error("No data collected for gesture detection.");
-        return null;
-    }
+        loop();
+    });
 }
+
 
 function exportHandData() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataset, null, 1));
@@ -281,7 +292,7 @@ function exportHandData() {
 startButton.addEventListener("click", startWebcam);
 snapshotButton.addEventListener("click", recordHandTracking);
 exportButton.addEventListener("click", exportHandData);
-checkButton.addEventListener("click", detectGesture);
+checkButton.addEventListener("click", startDetection);
 jsonButton.addEventListener("click", importJSON);
 
 initializeHandTracking();

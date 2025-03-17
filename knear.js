@@ -1,5 +1,5 @@
 // https://www.npmjs.com/package/knear with added error messages and constructor to init with dataset
-
+const Z_SCALING_FACTOR = 0.1;
 export default class kNear {
     constructor(k, training = []) {
         this.k = k
@@ -13,13 +13,16 @@ export default class kNear {
 
     //compute the euclidean distance between two vectors
     //function assumes vectors are arrays of equal length
+
     dist(v1, v2) {
-        let sum = 0
-        v1.forEach( (val, index) => {
-            sum += Math.pow(val - v2[index], 2)
-        })
-        return Math.sqrt(sum)
-    };
+        let sum = 0;
+        v1.forEach((val, index) => {
+            let weight = (index % 3 === 2) ? Z_SCALING_FACTOR : 1; // Z krijgt een lagere weging
+            sum += Math.pow((val - v2[index]) * weight, 2);
+        });
+        return Math.sqrt(sum);
+    }
+
 
     updateMax(val, arr) {
         let max = 0
@@ -127,22 +130,20 @@ export default class kNear {
     }
 
     // **🆕 Zoek de K dichtstbijzijnde matches en geef de frequentie van labels terug**
-    findNearest(v, numNearest = 3) {
+    findNearest(v, numNearest = 1) {
         if (!this.checkInput(v)) return null;
 
         let distances = this.training.map(obj => ({
-            d: this.dist(v, obj.v),
+            d: this.dist(v, obj.v), // Bereken de afstand
             vote: obj.lab
         }));
 
         distances.sort((a, b) => a.d - b.d);
         let nearestNeighbors = distances.slice(0, numNearest);
 
-        let frequencyMap = {};
-        for (let neighbor of nearestNeighbors) {
-            frequencyMap[neighbor.vote] = (frequencyMap[neighbor.vote] || 0) + 1;
-        }
-
-        return Object.entries(frequencyMap).sort((a, b) => b[1] - a[1]);
+        return nearestNeighbors.map(neighbor => ({
+            label: neighbor.vote,
+            distance: neighbor.d
+        }));
     }
 }
